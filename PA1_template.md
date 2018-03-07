@@ -14,7 +14,8 @@ This document illustrates data analysis from a personal activity monitoring devi
 Firstly, the data is unzipped, and loaded into a data frame. This assumes the the working directory contains the file "*activity.zip*". 
 Secondly, the column containing the date is converted into the R date format. 
 
-``` {r loading_data, echo=TRUE}
+
+```r
 unzip("activity.zip", overwrite = TRUE)
 
 data_frame <- read.csv("activity.csv")
@@ -25,83 +26,69 @@ data_frame$date <- as.Date(data_frame$date, format = "%Y-%m-%d")
 ## What is the mean total number of steps taken per day?
 
 After aggregating the data, a histogram can be plotted to illustrate the total number of steps taken per day. 
-``` {r, echo=TRUE}
+
+```r
 aggdata <- aggregate(steps~date, data = data_frame, FUN=sum)
 ```
 
-``` {r, histogram1, echo=FALSE}
-hist(aggdata$steps, breaks = 10, main = "Histogram of steps per day", col = "blue", xlab = "Steps", ylab = "Days")
-```
+![](PA1_template_files/figure-html/histogram1-1.png)<!-- -->
 
-``` {r, echo=FALSE}
-mean1 <- mean(aggdata$steps)
-median1 <- median(aggdata$steps)
-```
 
-The average of the total steps is `r format(mean1, scientific=FALSE)` and the median is `r median1`. 
+
+The average of the total steps is 10766.19 and the median is 10765. 
 
 ## What is the average daily activity pattern?
 
 After aggregating, a time series plot of  5-minute interval and the average number of steps taken can be shown.
-``` {r, echo=TRUE}
+
+```r
 aggdata2 <- aggregate(steps~interval, data = data_frame, FUN=mean)
 ```
 
-``` {r, plot1, echo=FALSE}
-plot(aggdata2$interval, aggdata2$steps, type = "l", main = "Average number of steps during a day", xlab = "Time (in intervals of 5 minutes)", ylab = "Average number of steps")
-```
+![](PA1_template_files/figure-html/plot1-1.png)<!-- -->
 
-``` {r, echo=FALSE}
-max_interval <- which.max(aggdata2$steps)
-max_steps <- max(aggdata2$steps)
-```
 
-Of the 5-minute intervals, the interval number `r max_interval` contains the maximum number of steps with `r max_steps` steps. 
+
+Of the 5-minute intervals, the interval number 104 contains the maximum number of steps with 206.1698113 steps. 
 
 
 ## Imputing missing values
-``` {r, echo=FALSE}
-missing_values <- sum(is.na(data_frame$steps))
-```
 
-The total number of missing values is `r missing_values`.  
+
+The total number of missing values is 2304.  
   
 The following code replaces the missing  values with the average of that interval through the recording history.
 
-``` {r, echo=TRUE}
+
+```r
 new_dataframe <- data_frame
 
 new_dataframe$steps[is.na(new_dataframe$steps)] <- aggdata2$steps[match(new_dataframe$interval[is.na(new_dataframe$steps)], aggdata2$interval)]
 ```
 After aggregating the data, we can plot a new histogram with the missing values extrapolated. 
-``` {r, echo=TRUE}
+
+```r
 aggdata3 <- aggregate(steps~date, data = data_frame, FUN=sum)
 ```
-``` {r, histogram2, echo=FALSE}
-hist(aggdata3$steps, breaks = 10, main = "Histogram of steps per day", col = "red", xlab = "Steps", ylab = "Days")
-```
-``` {r, echo=FALSE}
-mean2 <- mean(aggdata3$steps)
-median2 <- median(aggdata3$steps)
-```
-Naturally, neither the chart nor the mean (`r format(mean2, scientific=FALSE)` ) and median (`r median2`) have changed when using this method.  
+![](PA1_template_files/figure-html/histogram2-1.png)<!-- -->
+
+Naturally, neither the chart nor the mean (10766.19 ) and median (10765) have changed when using this method.  
   
 It is not possible to use a daily average because the missing values occur only for days where the complete data is missing. The following code can be used to show the dates with missing data:
-``` {r, echo=TRUE}
+
+```r
 missing_values <- unique(data_frame$date[is.na(data_frame$steps)])
 ```
-The days with missing values are `r missing_values`.
+The days with missing values are 2012-10-01, 2012-10-08, 2012-11-01, 2012-11-04, 2012-11-09, 2012-11-10, 2012-11-14, 2012-11-30.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 For this analysis, it is best to use the *dplyr* and *ggplot* libraries. 
-``` {r, echo=FALSE, message=F, warning=F}
-library(dplyr)
-library(ggplot2)	
-```
+
 The following code introduces a factor variable based on **weekday** or **weekend**:
-``` {r, echo=TRUE}
+
+```r
 new_dataframe$weekday <- factor((weekdays(new_dataframe$date) %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")), levels=c(FALSE, TRUE), labels=c('Weekend', 'Weekday'))
 
 chart_data <- new_dataframe %>%
@@ -110,6 +97,9 @@ chart_data <- new_dataframe %>%
 ```
 
 This can then be plotted using *ggplot*:
-``` {r, echo=TRUE}
+
+```r
 ggplot(chart_data, aes(interval, steps)) + geom_line(colour = "blue") + facet_grid(weekday ~ .) + labs(x = "Time (in intervals of 5 minutes)", y = "Steps", title = "Average number of steps on weekends and weekdays")
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
